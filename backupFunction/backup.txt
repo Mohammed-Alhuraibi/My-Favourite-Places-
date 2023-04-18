@@ -1,0 +1,131 @@
+######################## functions for Login page ################################################
+
+
+from signupPage import *
+from personPage import *
+
+import sqlite3
+
+from PyQt5 import QtCore, QtGui
+from  PyQt5 import QtWidgets as QtWidgets
+from PyQt5.QtGui import QFont,QFontDatabase
+
+def loginBtnPressed(self):
+        print("login btn pressed")
+        username = self.userNameField.text()
+        password = self.passwordField.text()
+
+
+        self.my_database = sqlite3.connect('users.db')
+        self.cur = self.my_database.cursor()
+
+        self.users = self.cur.execute('''SELECT USERNAME,EMAIL,PASSWORD,IMAGE FROM USERS WHERE USERNAME = ? AND PASSWORD = ? ''',(username,password))
+        self.userInfo = self.users.fetchall()[0]
+        print(self.userInfo[0])
+        if(self.userInfo[0] == username):
+            print("user found")
+            self.personWidnow = QtWidgets.QMainWindow()
+            self.ui = Ui_MainWindow()
+            self.ui.setupUi(self.personWidnow)
+            self.personWidnow.show()
+            self.loadDataToNewPage()
+            LoginPage.close()
+
+        else:
+            print("user not fount")
+        #
+        # my_database.close()
+        # cur.close()
+
+    def goToSignupPage(self):
+        print("go to singup page")
+        self.signupWindow = QtWidgets.QMainWindow()
+        self.ui = Ui_SignupPage()
+        self.ui.setupUi(self.signupWindow)
+        self.signupWindow.show()
+        LoginPage.close()
+
+
+    def loadDataToNewPage(self):
+        self.ui.username.setText(self.userInfo[0])
+        imageBinary = self.userInfo[3]
+        pixmap = QtGui.QPixmap()
+        pixmap.loadFromData(imageBinary)
+        self.ui.img.setPixmap(pixmap)
+
+
+
+
+
+
+######################## functions for Signup page ################################################
+
+
+from loginPage import *
+
+import sqlite3
+
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import  QApplication,QDialog,QFileDialog
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+
+
+def signupBtnPressed(self):
+        print("Signup button pressed")
+        # take infos from the field
+        username = self.userNameField.text()
+        email = self.emailField.text()
+        password = self.passwordFiled.text()
+
+        #connect to the database
+        sqliteConnection = sqlite3.connect('users.db')
+        cursor = sqliteConnection.cursor()
+        print("Connected to SQLite")
+
+        # Insert query
+        sqlite_insert_blob_query = '''INSERT INTO USERS (USERNAME,EMAIL,PASSWORD,IMAGE) VALUES(?,?,?,?)'''
+
+        # Converting human readable file into
+        # binary data
+        empPhoto = self.convertToBinaryData(self.imagePath)
+
+        # Convert data into tuple format
+        data_tuple = (username,email,password,empPhoto)
+
+        # using cursor object executing our query
+        cursor.execute(sqlite_insert_blob_query,data_tuple)
+        sqliteConnection.commit()
+        print("Image and file inserted sucessfully as blob into table")
+        cursor.close()
+
+
+    def convertToBinaryData(self,filename):
+
+      # Convert binary format to images or files data
+      with open(filename, 'rb') as file:
+          blobData = file.read()
+      return blobData
+
+    def goToLoginPage(self):
+        print("go to login page")
+        self.loginWindow = QtWidgets.QMainWindow()
+        self.ui =Ui_LoginPage()
+        self.ui.setupUi(self.loginWindow)
+        self.loginWindow.show()
+        SignupPage.close()
+
+        # self.loginWindow = QtWidgets.QMainWindow()
+        # self.ui = Ui_LoginPage()
+        # self.ui.setupUi(self.loginWindow)
+        # self.loginWindow.show()
+        # SignupPage.close()
+
+    def browseImage(self):
+        print("browing image")
+
+        fname = QFileDialog.getOpenFileName()
+        self.imagePath = fname[0]
+
+        self.personImg = QPixmap(self.imagePath)
+        self.img.setPixmap(self.personImg)
